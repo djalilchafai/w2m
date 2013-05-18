@@ -20,6 +20,7 @@ __license__ = 'GNU General Public License (GPL)'
  CHANGELOG
    v0.3 2013-05-17 FIXME:
      Fix encoding detection if not given by header (reported by Fred Hucht)
+     Add timeout for sockets (Fred Hucht)
    v0.2 2012-01-01 
      Code clean-up.
      In this version, w2m.py can be used as a module and also as a script.
@@ -31,7 +32,7 @@ __license__ = 'GNU General Public License (GPL)'
 
  TODO
    Add a graphical user interface (GUI, for instance based on wx)
-   Add a MSN version by deriving a class which overloads W2M._url_get()
+   Add a arXiv.org version by deriving a class which overloads W2M._url_get()
    Add support for multiple edges (weighted graph)
    Add support for redirections (url synonyms and HTTP redirections)
    Add support for ignore url by content (not only content-type)
@@ -57,6 +58,7 @@ import urlparse # http://docs.python.org/library/urlparse.html
 import urllib2 # http://docs.python.org/library/urllib2.html
 import HTMLParser # http://docs.python.org/library/htmlparser.html
 import chardet # https://pypi.python.org/pypi/chardet 
+import socket # http://docs.python.org/2/library/socket.html
 
 import threading # http://docs.python.org/library/threading.html
 import logging # http://docs.python.org/library/logging.html
@@ -132,6 +134,9 @@ class W2M():
             level=self.log_level)
         # delay for threads
         self.dt = 0.25
+        # socket timeout in seconds
+        timeout = 10
+        socket.setdefaulttimeout(timeout)
     # end: W2M.__init__()
     def work(self):
         """
@@ -313,7 +318,7 @@ class W2M():
         self.urls.append(u) # we add u to list of urls to analyze
         self.vertices.append(u) # we add u to list of vertices
         i = self.vertices.index(u) 
-        logging.debug('new vertex %i %s', 1+i, u)
+        logging.info('new vertex %i %s', 1+i, u)
         self.lookup_answers[u] = (True,i)
         return(True,i)
     # end: W2M._lookup()
@@ -392,9 +397,9 @@ class _AnchorParser(HTMLParser.HTMLParser):
 
 class _Analyze(threading.Thread):
     """
-    This class (inside the W2M class) is a wrapper for its run() method.
+    This class is a wrapper for the W2M.run() method.
     Being outside W2M allows multi-threading, which is crucial for us.
-    Without threading, run() may be converted to method W2M.analyze().
+    Without threading, _Analyse.run() may be converted to W2M.analyze().
     """
     def __init__(self,url,w2m):
         """
@@ -450,7 +455,7 @@ class _Analyze(threading.Thread):
                     self.w2m.edges.index([i,j]) 
                 except: 
                     self.w2m.edges.append([i,j])
-                    logging.debug('new edge %i %i', 1+i, 1+j)
+                    logging.info('new edge %i %i', 1+i, 1+j)
     # end: _Analyze.run()
 # end: _Analyse
 
